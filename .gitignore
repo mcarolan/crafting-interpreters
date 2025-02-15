@@ -1,0 +1,163 @@
+# ===========================
+# General ignores
+# ===========================
+
+# Ignore Gradle build outputs
+/build/
+.gradle/
+gradle-app.setting
+
+# Ignore dependency caches (local Gradle and Maven repositories)
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+**/build/
+**/out/
+**/.gradle/
+
+# Ignore IntelliJ IDEA / Android Studio specific files
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore Eclipse project files
+.project
+.classpath
+.settings/
+.metadata/
+
+# Ignore NetBeans project files
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.build-impl.xml
+
+# Ignore Mac system files
+.DS_Store
+
+# Ignore Linux system files
+*~
+*.swp
+*.swo
+
+# Ignore Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===========================
+# Java/Kotlin specific ignores
+# ===========================
+
+# Ignore compiled Java/Kotlin class files
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.exe
+
+# Ignore log files
+*.log
+
+# Ignore test reports
+/test-results/
+/test-output/
+/build/reports/
+
+# Ignore coverage reports
+/coverage/
+**/jacoco.exec
+**/jacoco-report/
+**/coverage-report/
+
+# Ignore IDE-specific project files
+*.idea/
+*.vscode/
+*.classpath
+*.project
+*.settings/
+
+# Ignore temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*.swn
+
+# Ignore generated files
+*.generated
+generated/
+gen/
+
+# ===========================
+# Gradle Wrapper files (but keep the necessary ones)
+# ===========================
+
+/gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradlew
+!gradlew.bat
+
+# Ignore Gradle logs and caches
+.gradle/
+**/.gradle/
+**/build/
+**/.gradle-cache/
+
+# ===========================
+# Environment & Secrets (DO NOT COMMIT)
+# ===========================
+
+# Ignore environment variables & secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+/secrets/
+
+# Ignore OS-specific files
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# Exclude user-specific configurations
+# ===========================
+
+# Ignore user IDE configs
+*.iml
+*.ipr
+*.iws
+
+# Ignore Kotlin linting & formatting tools (ktlint/detekt caches)
+.ktlint-cache
+.detekt
+
+# ===========================
+# Other tools and temporary files
+# ===========================
+
+# Ignore Spotless & linting cache
+/.spotless/
+
+# Ignore SonarQube files
+/.scannerwork/
+/sonar/
+
+# Ignore CI/CD build artifacts
+/buildkite/
+circleci/
+.github/workflows/
