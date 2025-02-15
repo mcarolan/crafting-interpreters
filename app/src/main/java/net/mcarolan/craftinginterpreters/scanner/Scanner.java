@@ -1,9 +1,8 @@
-package net.mcarolan.craftinginterpreters.scanning;
+package net.mcarolan.craftinginterpreters.scanner;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import net.mcarolan.craftinginterpreters.ScannerException;
 
 public class Scanner {
@@ -122,47 +121,46 @@ public class Scanner {
     return new Token(tokenType, lexeme, literal, line, line);
   }
 
+  private Token operatorToken(String lexeme, TokenType type) {
+    current += lexeme.length();
+    return new Token(type, lexeme, null, line, line);
+  }
+
   private Token scanToken() {
     var c = charAt(current);
 
-    BiFunction<String, TokenType, Token> buildOperatorToken =
-        (lexeme, type) -> {
-          current += lexeme.length();
-          return new Token(type, lexeme, null, line, line);
-        };
-
     return switch (c) {
-      case '(' -> buildOperatorToken.apply(String.valueOf(c), TokenType.LEFT_PAREN);
-      case ')' -> buildOperatorToken.apply(String.valueOf(c), TokenType.RIGHT_PAREN);
-      case '{' -> buildOperatorToken.apply(String.valueOf(c), TokenType.LEFT_BRACE);
-      case '}' -> buildOperatorToken.apply(String.valueOf(c), TokenType.RIGHT_BRACE);
-      case ',' -> buildOperatorToken.apply(String.valueOf(c), TokenType.COMMA);
-      case '.' -> buildOperatorToken.apply(String.valueOf(c), TokenType.DOT);
-      case '-' -> buildOperatorToken.apply(String.valueOf(c), TokenType.MINUS);
-      case '+' -> buildOperatorToken.apply(String.valueOf(c), TokenType.PLUS);
-      case ';' -> buildOperatorToken.apply(String.valueOf(c), TokenType.SEMICOLON);
-      case '*' -> buildOperatorToken.apply(String.valueOf(c), TokenType.STAR);
-      case '/' -> buildOperatorToken.apply(String.valueOf(c), TokenType.SLASH);
+      case '(' -> operatorToken(String.valueOf(c), TokenType.LEFT_PAREN);
+      case ')' -> operatorToken(String.valueOf(c), TokenType.RIGHT_PAREN);
+      case '{' -> operatorToken(String.valueOf(c), TokenType.LEFT_BRACE);
+      case '}' -> operatorToken(String.valueOf(c), TokenType.RIGHT_BRACE);
+      case ',' -> operatorToken(String.valueOf(c), TokenType.COMMA);
+      case '.' -> operatorToken(String.valueOf(c), TokenType.DOT);
+      case '-' -> operatorToken(String.valueOf(c), TokenType.MINUS);
+      case '+' -> operatorToken(String.valueOf(c), TokenType.PLUS);
+      case ';' -> operatorToken(String.valueOf(c), TokenType.SEMICOLON);
+      case '*' -> operatorToken(String.valueOf(c), TokenType.STAR);
+      case '/' -> operatorToken(String.valueOf(c), TokenType.SLASH);
 
       case '!' ->
           (charAt(current + 1) == '=')
-              ? buildOperatorToken.apply("!=", TokenType.BANG_EQUAL)
-              : buildOperatorToken.apply(String.valueOf(c), TokenType.BANG);
+              ? operatorToken("!=", TokenType.BANG_EQUAL)
+              : operatorToken(String.valueOf(c), TokenType.BANG);
 
       case '=' ->
           (charAt(current + 1) == '=')
-              ? buildOperatorToken.apply("==", TokenType.EQUAL_EQUAL)
-              : buildOperatorToken.apply(String.valueOf(c), TokenType.EQUAL);
+              ? operatorToken("==", TokenType.EQUAL_EQUAL)
+              : operatorToken(String.valueOf(c), TokenType.EQUAL);
 
       case '<' ->
           (charAt(current + 1) == '=')
-              ? buildOperatorToken.apply("<=", TokenType.LESS_EQUAL)
-              : buildOperatorToken.apply(String.valueOf(c), TokenType.LESS);
+              ? operatorToken("<=", TokenType.LESS_EQUAL)
+              : operatorToken(String.valueOf(c), TokenType.LESS);
 
       case '>' ->
           (charAt(current + 1) == '=')
-              ? buildOperatorToken.apply(">=", TokenType.GREATER_EQUAL)
-              : buildOperatorToken.apply(String.valueOf(c), TokenType.GREATER);
+              ? operatorToken(">=", TokenType.GREATER_EQUAL)
+              : operatorToken(String.valueOf(c), TokenType.GREATER);
 
       case '"' -> string();
 

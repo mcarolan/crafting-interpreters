@@ -1,4 +1,4 @@
-package net.mcarolan.craftinginterpreters.scanning;
+package net.mcarolan.craftinginterpreters.scanner;
 
 import static org.junit.jupiter.api.Assertions.*;
 

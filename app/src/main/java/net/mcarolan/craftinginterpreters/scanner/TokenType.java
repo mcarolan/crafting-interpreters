@@ -1,4 +1,4 @@
-package net.mcarolan.craftinginterpreters.scanning;
+package net.mcarolan.craftinginterpreters.scanner;
 
 public enum TokenType {
   LEFT_PAREN,

@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import net.mcarolan.craftinginterpreters.scanning.Scanner;
+import net.mcarolan.craftinginterpreters.scanner.Scanner;
 
 public class Main {
   public static void main(String[] args) throws IOException {
