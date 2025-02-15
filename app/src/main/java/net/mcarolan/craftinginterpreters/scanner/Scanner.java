@@ -60,6 +60,7 @@ public class Scanner {
       tokens.add(token);
     }
 
+    tokens.add(new Token(TokenType.EOF, "", null, line, line));
     return tokens;
   }
 

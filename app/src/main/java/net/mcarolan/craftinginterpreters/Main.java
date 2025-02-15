@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import net.mcarolan.craftinginterpreters.ast.AstPrinter;
+import net.mcarolan.craftinginterpreters.parser.Parser;
 import net.mcarolan.craftinginterpreters.scanner.Scanner;
 
 public class Main {
@@ -22,9 +24,11 @@ public class Main {
 
   static void run(String source) {
     var scanner = new Scanner(source);
-    for (var token : scanner.scanTokens()) {
-      System.out.println(token);
-    }
+    var tokens = scanner.scanTokens();
+    var parser = new Parser(tokens);
+    var expression = parser.parse();
+
+    System.out.println(AstPrinter.print(expression));
   }
 
   static void runFile(String path) throws IOException {
