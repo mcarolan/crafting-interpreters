@@ -1,25 +1,44 @@
 package net.mcarolan.craftinginterpreters.lox;
 
 import java.util.List;
-import net.mcarolan.craftinginterpreters.ast.*;
+import net.mcarolan.craftinginterpreters.ast.expression.*;
+import net.mcarolan.craftinginterpreters.ast.statement.*;
 import net.mcarolan.craftinginterpreters.lox.value.*;
 import net.mcarolan.craftinginterpreters.scanner.TokenType;
 
 public class Interpreter {
 
-  private final EnvironmentPort environment;
+  private EnvironmentPort environment;
+  private final IOPort io;
 
-  public Interpreter(EnvironmentPort environment) {
+  public Interpreter(EnvironmentPort environment, IOPort io) {
     this.environment = environment;
+    this.io = io;
   }
 
-  static LoxValue evaluateExpression(Expression expression) {
+  LoxValue evaluateExpression(Expression expression) {
     return switch (expression) {
       case Binary binary -> evaluateBinary(binary);
       case Grouping grouping -> evaluateGrouping(grouping);
       case Literal literal -> evaluateLiteral(literal);
       case Unary unary -> evaluateUnary(unary);
+      case Variable variable -> evaluateVariable(variable);
+      case Assign assign -> evaluateAssignment(assign);
     };
+  }
+
+  private LoxValue evaluateAssignment(Assign assign) {
+    var value = evaluateExpression(assign.value());
+    environment.assign(assign.name().lexeme(), value);
+    return value;
+  }
+
+  private LoxValue evaluateVariable(Variable variable) {
+    try {
+      return environment.get(variable.name().lexeme());
+    } catch (IllegalArgumentException e) {
+      throw new InterpreterException("Failed to evaluate variable", variable.line(), e);
+    }
   }
 
   public void interpret(List<Statement> statements) {
@@ -28,22 +47,31 @@ public class Interpreter {
 
   private void evaluateStatement(Statement statement) {
     switch (statement) {
-      case ExpressionStatement expressionStatement -> {
-        evaluateExpression(expressionStatement.expression());
+      case ExpressionStatement expression -> {
+        evaluateExpression(expression.expression());
       }
       case Print print -> {
         var stringValue = evaluateExpression(print.expression()).stringify();
-        environment.print(stringValue);
+        io.print(stringValue);
+      }
+      case Var var -> {
+        var initialiser = evaluateExpression(var.initialiser());
+        environment.define(var.name().lexeme(), initialiser);
+      }
+      case Block block -> {
+        var previous = environment;
+        environment = new DefaultEnvironmentAdapter(previous);
+        block.statementList().forEach(this::evaluateStatement);
+        environment = previous;
       }
     }
-    ;
   }
 
-  private static LoxValue evaluateGrouping(Grouping grouping) {
+  private LoxValue evaluateGrouping(Grouping grouping) {
     return evaluateExpression(grouping.expression());
   }
 
-  private static LoxValue evaluateBinary(Binary binary) {
+  private LoxValue evaluateBinary(Binary binary) {
     var left = evaluateExpression(binary.left());
     var right = evaluateExpression(binary.right());
 
@@ -127,7 +155,7 @@ public class Interpreter {
     return literal.value();
   }
 
-  private static LoxValue evaluateUnary(Unary unary) {
+  private LoxValue evaluateUnary(Unary unary) {
     var right = evaluateExpression(unary.right());
 
     return switch (unary.operator().type()) {

@@ -3,8 +3,8 @@ package net.mcarolan.craftinginterpreters.parser;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
-import net.mcarolan.craftinginterpreters.ast.Binary;
-import net.mcarolan.craftinginterpreters.ast.Literal;
+import net.mcarolan.craftinginterpreters.ast.expression.Binary;
+import net.mcarolan.craftinginterpreters.ast.expression.Literal;
 import net.mcarolan.craftinginterpreters.lox.value.NumberValue;
 import net.mcarolan.craftinginterpreters.scanner.ScannerFixtures;
 import net.mcarolan.craftinginterpreters.scanner.Token;
@@ -18,14 +18,12 @@ class ParserTest extends ScannerFixtures {
     var expected =
         new Binary(
             new Binary(
-                new Literal(new NumberValue(1.0), 1, 1),
+                new Literal(new NumberValue(1.0), 1),
                 new Token(TokenType.PLUS, "+", null, 1, 1),
-                new Literal(new NumberValue(1.0), 1, 1),
-                1,
+                new Literal(new NumberValue(1.0), 1),
                 1),
             new Token(TokenType.EQUAL_EQUAL, "==", null, 1, 1),
-            new Literal(new NumberValue(2.0), 1, 1),
-            1,
+            new Literal(new NumberValue(2.0), 1),
             1);
     var tokens =
         List.of(

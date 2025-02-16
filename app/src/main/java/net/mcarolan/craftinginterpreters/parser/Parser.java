@@ -4,7 +4,8 @@ import static net.mcarolan.craftinginterpreters.scanner.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.mcarolan.craftinginterpreters.ast.*;
+import net.mcarolan.craftinginterpreters.ast.expression.*;
+import net.mcarolan.craftinginterpreters.ast.statement.*;
 import net.mcarolan.craftinginterpreters.lox.ParserException;
 import net.mcarolan.craftinginterpreters.lox.value.BooleanValue;
 import net.mcarolan.craftinginterpreters.lox.value.NullValue;
@@ -33,31 +34,77 @@ public class Parser {
     return statements;
   }
 
+  private Statement declaration() {
+    if (match(VAR)) {
+      return varDeclaration();
+    }
+
+    return statement();
+  }
+
+  private Statement varDeclaration() {
+    var name = consume(IDENTIFIER, "Expect variable name");
+
+    Expression initialiser = new Literal(NullValue.VALUE, previous().lineEnd());
+
+    if (match(EQUAL)) {
+      initialiser = expression();
+    }
+
+    expectSemicolon();
+    return new Var(name, initialiser);
+  }
+
   private Statement statement() {
     if (match(PRINT)) {
       return printStatement();
     }
-    return expressionStatement();
+    if (match(LEFT_BRACE)) {
+      return new Block(block());
+    }
+    return declaration();
   }
 
-  private Statement expressionStatement() {
-    var expression = expression();
-    expectSemicolon(expression().lineEnd());
-    return new ExpressionStatement(expression);
+  private List<Statement> block() {
+    var statements = new ArrayList<Statement>();
+
+    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    consume(RIGHT_BRACE, "Expected } after blcok");
+    return statements;
   }
 
   private Statement printStatement() {
     var expression = expression();
-    expectSemicolon(expression.lineEnd());
+    expectSemicolon();
     return new Print(expression);
   }
 
-  private void expectSemicolon(int line) {
-    consume(SEMICOLON, "Expected ;", line);
+  private void expectSemicolon() {
+    consume(SEMICOLON, "Expected ;");
   }
 
   private Expression expression() {
-    return equality();
+    return assignment();
+  }
+
+  private Expression assignment() {
+    var expression = equality();
+
+    if (match(EQUAL)) {
+      var equals = previous();
+      var value = assignment();
+
+      if (expression instanceof Variable var) {
+        return new Assign(var.name(), value, value.line());
+      } else {
+        throw new ParserException("Invalid assignment target", equals.lineEnd());
+      }
+    }
+
+    return expression;
   }
 
   private Expression equality() {
@@ -67,7 +114,7 @@ public class Parser {
       var operator = previous();
       var right = comparison();
 
-      expression = new Binary(expression, operator, right, operator.lineEnd(), right.lineEnd());
+      expression = new Binary(expression, operator, right, right.line());
     }
 
     return expression;
@@ -79,7 +126,7 @@ public class Parser {
     while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
       var operator = previous();
       var right = term();
-      expression = new Binary(expression, operator, right, operator.lineEnd(), right.lineEnd());
+      expression = new Binary(expression, operator, right, right.line());
     }
 
     return expression;
@@ -91,7 +138,7 @@ public class Parser {
     while (match(MINUS, PLUS)) {
       var operator = previous();
       var right = factor();
-      expression = new Binary(expression, operator, right, operator.lineEnd(), right.lineEnd());
+      expression = new Binary(expression, operator, right, right.line());
     }
 
     return expression;
@@ -103,7 +150,7 @@ public class Parser {
     while (match(SLASH, STAR)) {
       var operator = previous();
       var right = unary();
-      expression = new Binary(expression, operator, right, operator.lineEnd(), right.lineEnd());
+      expression = new Binary(expression, operator, right, right.line());
     }
 
     return expression;
@@ -113,7 +160,7 @@ public class Parser {
     if (match(BANG, MINUS)) {
       var operator = previous();
       var right = unary();
-      return new Unary(operator, right, operator.lineEnd(), right.lineEnd());
+      return new Unary(operator, right, right.line());
     }
 
     return primary();
@@ -121,35 +168,39 @@ public class Parser {
 
   private Expression primary() {
     if (match(FALSE)) {
-      return new Literal(BooleanValue.FALSE, previous().lineEnd(), previous().lineEnd());
+      return new Literal(BooleanValue.FALSE, previous().lineEnd());
     }
 
     if (match(TRUE)) {
-      return new Literal(BooleanValue.TRUE, previous().lineEnd(), previous().lineEnd());
+      return new Literal(BooleanValue.TRUE, previous().lineEnd());
     }
 
     if (match(NIL)) {
-      return new Literal(NullValue.VALUE, previous().lineEnd(), previous().lineEnd());
+      return new Literal(NullValue.VALUE, previous().lineEnd());
     }
 
     if (match(NUMBER, STRING)) {
-      return new Literal(previous().literal(), previous().lineEnd(), previous().lineEnd());
+      return new Literal(previous().literal(), previous().lineEnd());
+    }
+
+    if (match(IDENTIFIER)) {
+      return new Variable(previous(), previous().lineEnd());
     }
 
     if (match(LEFT_PAREN)) {
-      var line = previous().lineEnd();
       var expression = expression();
-      consume(RIGHT_PAREN, "Expect ')' after expression.", line);
-      return new Grouping(expression, line, expression.lineEnd());
+      consume(RIGHT_PAREN, "Expect ')' after expression.");
+      return new Grouping(expression, expression.line());
     }
 
     throw new ParserException("Expect expression.", peek().lineEnd());
   }
 
-  private void consume(TokenType type, String errorMessage, int line) {
+  private Token consume(TokenType type, String errorMessage) {
     if (!match(type)) {
-      throw new ParserException(errorMessage, line);
+      throw new ParserException(errorMessage, peek().lineEnd());
     }
+    return previous();
   }
 
   private boolean match(TokenType... types) {

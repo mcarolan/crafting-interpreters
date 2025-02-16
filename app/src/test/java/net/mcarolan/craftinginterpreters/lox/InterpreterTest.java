@@ -3,6 +3,7 @@ package net.mcarolan.craftinginterpreters.lox;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import net.mcarolan.craftinginterpreters.lox.value.*;
 import net.mcarolan.craftinginterpreters.parser.Parser;
@@ -14,7 +15,8 @@ class InterpreterTest {
 
   record ExpressionTestCase(String input, LoxValue expectedValue) {}
 
-  record ProgramTestCase(String input, List<String> expectedStandardOutput) {}
+  record ProgramTestCase(
+      String input, List<String> expectedStandardOutput, Map<String, LoxValue> expectedVariables) {}
 
   private static Stream<ExpressionTestCase> provideExpressionTestCases() {
     return Stream.of(
@@ -64,22 +66,85 @@ class InterpreterTest {
     var scanner = new Scanner(testCase.input);
     var parser = new Parser(scanner.scanTokens());
     var expression = parser.parseExpression();
-    var result = Interpreter.evaluateExpression(expression);
+    var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new StubIOPort());
+    var result = interpreter.evaluateExpression(expression);
 
     assertEquals(testCase.expectedValue, result);
   }
 
   private static Stream<ProgramTestCase> provideProgramTestCases() {
     return Stream.of(
-        new ProgramTestCase("print \"one\";", List.of("one")),
-        new ProgramTestCase("print true;", List.of("true")),
-        new ProgramTestCase("print 1 + 1;", List.of("2")),
+        new ProgramTestCase("print \"one\";", List.of("one"), Map.of()),
+        new ProgramTestCase("print true;", List.of("true"), Map.of()),
+        new ProgramTestCase("print 1 + 1;", List.of("2"), Map.of()),
         new ProgramTestCase(
             """
-                    print "hello";
-                    print "world";
-                    """,
-            List.of("hello", "world")));
+                                print "hello";
+                                print "world";
+                                """,
+            List.of("hello", "world"),
+            Map.of()),
+        new ProgramTestCase(
+            """
+                        var a = 1;
+                        var b = 2;
+                        print a + b;
+                        """,
+            List.of("3"),
+            Map.of("a", new NumberValue(1), "b", new NumberValue(2))),
+        new ProgramTestCase(
+            """
+                        var a;
+                        print a;
+                        """,
+            List.of("nil"),
+            Map.of("a", NullValue.VALUE)),
+        new ProgramTestCase(
+            """
+                        var a = 1;
+                        print a = 2;
+                        """,
+            List.of("2"),
+            Map.of("a", new NumberValue(2))),
+        new ProgramTestCase(
+            """
+                        var a = "global a";
+                        var b = "global b";
+                        var c = "global c";
+                        {
+                            var a = "outer a";
+                            var b = "outer b";
+                            {
+                                var a = "inner a";
+                                print a;
+                                print b;
+                                print c;
+                            }
+                            print a;
+                            print b;
+                            print c;
+                        }
+                        print a;
+                        print b;
+                        print c;
+                        """,
+            List.of(
+                "inner a",
+                "outer b",
+                "global c",
+                "outer a",
+                "outer b",
+                "global c",
+                "global a",
+                "global b",
+                "global c"),
+            Map.of(
+                "a",
+                new StringValue("global a"),
+                "b",
+                new StringValue("global b"),
+                "c",
+                new StringValue("global c"))));
   }
 
   @ParameterizedTest
@@ -88,9 +153,11 @@ class InterpreterTest {
     var scanner = new Scanner(testCase.input);
     var parser = new Parser(scanner.scanTokens());
     var statements = parser.parse();
-    var environment = new StubEnvironmentAdapter();
-    var interpreter = new Interpreter(environment);
+    var environment = new DefaultEnvironmentAdapter();
+    var io = new StubIOPort();
+    var interpreter = new Interpreter(environment, io);
     interpreter.interpret(statements);
-    assertEquals(testCase.expectedStandardOutput(), environment.getStandardOutput());
+    assertEquals(testCase.expectedStandardOutput(), io.getStdout());
+    assertEquals(testCase.expectedVariables, environment.values);
   }
 }

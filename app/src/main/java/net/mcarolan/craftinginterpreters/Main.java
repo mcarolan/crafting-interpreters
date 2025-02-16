@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import net.mcarolan.craftinginterpreters.lox.DefaultEnvironmentAdapter;
+import net.mcarolan.craftinginterpreters.lox.DefaultIOPort;
 import net.mcarolan.craftinginterpreters.lox.Interpreter;
 import net.mcarolan.craftinginterpreters.lox.LoxException;
 import net.mcarolan.craftinginterpreters.parser.Parser;
@@ -29,7 +30,7 @@ public class Main {
     var tokens = scanner.scanTokens();
     var parser = new Parser(tokens);
     var statements = parser.parse();
-    var interpreter = new Interpreter(new DefaultEnvironmentAdapter());
+    var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new DefaultIOPort());
     interpreter.interpret(statements);
   }
 
