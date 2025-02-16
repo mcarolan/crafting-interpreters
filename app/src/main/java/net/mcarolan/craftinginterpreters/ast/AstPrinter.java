@@ -1,16 +1,19 @@
 package net.mcarolan.craftinginterpreters.ast;
 
+import net.mcarolan.craftinginterpreters.lox.value.LoxValue;
 import net.mcarolan.craftinginterpreters.scanner.Token;
 
 public class AstPrinter {
 
   public static String print(Expression expression) {
     return switch (expression) {
-      case Grouping(Expression inner) -> parenthesise("grouping", inner);
-      case Binary(Expression left, Token operator, Expression right) ->
+      case Grouping(Expression inner, int lineStart, int lineEnd) ->
+          parenthesise("grouping", inner);
+      case Binary(Expression left, Token operator, Expression right, int lineStart, int lineEnd) ->
           parenthesise(operator.lexeme(), left, right);
-      case Literal(Object value) -> value == null ? "nil" : value.toString();
-      case Unary(Token operator, Expression right) -> parenthesise(operator.lexeme(), right);
+      case Literal(LoxValue loxValue, int lineStart, int lineEnd) -> loxValue.stringify();
+      case Unary(Token operator, Expression right, int lineStart, int lineEnd) ->
+          parenthesise(operator.lexeme(), right);
     };
   }
 

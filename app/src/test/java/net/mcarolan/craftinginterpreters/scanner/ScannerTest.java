@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.stream.Stream;
+import net.mcarolan.craftinginterpreters.lox.value.NumberValue;
+import net.mcarolan.craftinginterpreters.lox.value.StringValue;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -75,28 +77,34 @@ class ScannerTest extends ScannerFixtures {
         new TokenTestCase(
             "\"hello, world!\"",
             List.of(
-                new Token(TokenType.STRING, "\"hello, world!\"", "hello, world!", 1, 1), eof(1))),
+                new Token(
+                    TokenType.STRING, "\"hello, world!\"", new StringValue("hello, world!"), 1, 1),
+                eof(1))),
         new TokenTestCase(
             "\"hello\nworld!\"!",
             List.of(
-                new Token(TokenType.STRING, "\"hello\nworld!\"", "hello\nworld!", 1, 2),
+                new Token(
+                    TokenType.STRING, "\"hello\nworld!\"", new StringValue("hello\nworld!"), 1, 2),
                 new Token(TokenType.BANG, "!", null, 2, 2),
                 eof(2))),
 
         // number
-        new TokenTestCase("123", List.of(new Token(TokenType.NUMBER, "123", 123.0, 1, 1), eof(1))),
         new TokenTestCase(
-            "123.45", List.of(new Token(TokenType.NUMBER, "123.45", 123.45, 1, 1), eof(1))),
+            "123",
+            List.of(new Token(TokenType.NUMBER, "123", new NumberValue(123.0), 1, 1), eof(1))),
+        new TokenTestCase(
+            "123.45",
+            List.of(new Token(TokenType.NUMBER, "123.45", new NumberValue(123.45), 1, 1), eof(1))),
         new TokenTestCase(
             "-123.45",
             List.of(
                 new Token(TokenType.MINUS, "-", null, 1, 1),
-                new Token(TokenType.NUMBER, "123.45", 123.45, 1, 1),
+                new Token(TokenType.NUMBER, "123.45", new NumberValue(123.45), 1, 1),
                 eof(1))),
 
         // identifier
         new TokenTestCase(
-            "orchid", List.of(new Token(TokenType.IDENTIFIER, "orchid", "orchid", 1, 1), eof(1))),
+            "orchid", List.of(new Token(TokenType.IDENTIFIER, "orchid", null, 1, 1), eof(1))),
 
         // keywords
         new TokenTestCase("AND", List.of(new Token(TokenType.AND, "AND", null, 1, 1), eof(1))),

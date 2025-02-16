@@ -1,3 +1,5 @@
 package net.mcarolan.craftinginterpreters.ast;
 
-public record Literal(Object value) implements Expression {}
+import net.mcarolan.craftinginterpreters.lox.value.LoxValue;
+
+public record Literal(LoxValue value, int lineStart, int lineEnd) implements Expression {}

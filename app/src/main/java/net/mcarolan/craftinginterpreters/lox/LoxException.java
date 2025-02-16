@@ -1,7 +1,7 @@
-package net.mcarolan.craftinginterpreters;
+package net.mcarolan.craftinginterpreters.lox;
 
 public sealed class LoxException extends RuntimeException
-    permits ParserException, ScannerException {
+    permits InterpreterException, ParserException, ScannerException {
   private int line;
 
   public LoxException(String message, int line) {

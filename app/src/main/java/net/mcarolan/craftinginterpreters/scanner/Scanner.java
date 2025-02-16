@@ -3,7 +3,9 @@ package net.mcarolan.craftinginterpreters.scanner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.mcarolan.craftinginterpreters.ScannerException;
+import net.mcarolan.craftinginterpreters.lox.ScannerException;
+import net.mcarolan.craftinginterpreters.lox.value.NumberValue;
+import net.mcarolan.craftinginterpreters.lox.value.StringValue;
 
 public class Scanner {
 
@@ -89,7 +91,7 @@ public class Scanner {
     current++;
     var value = source.substring(start + 1, current - 1);
     var lexeme = source.substring(start, current);
-    return new Token(TokenType.STRING, lexeme, value, lineStart, line);
+    return new Token(TokenType.STRING, lexeme, new StringValue(value), lineStart, line);
   }
 
   private Token number() {
@@ -106,7 +108,7 @@ public class Scanner {
 
     var lexeme = source.substring(start, current);
     var value = Double.parseDouble(lexeme);
-    return new Token(TokenType.NUMBER, lexeme, value, line, line);
+    return new Token(TokenType.NUMBER, lexeme, new NumberValue(value), line, line);
   }
 
   private Token identifierOrKeyword() {
@@ -118,8 +120,7 @@ public class Scanner {
 
     var lexeme = source.substring(start, current);
     var tokenType = KEYWORDS.getOrDefault(lexeme.toLowerCase(), TokenType.IDENTIFIER);
-    var literal = tokenType == TokenType.IDENTIFIER ? lexeme : null;
-    return new Token(tokenType, lexeme, literal, line, line);
+    return new Token(tokenType, lexeme, null, line, line);
   }
 
   private Token operatorToken(String lexeme, TokenType type) {
