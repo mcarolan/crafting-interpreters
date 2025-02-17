@@ -63,11 +63,11 @@ class InterpreterTest {
   @ParameterizedTest
   @MethodSource("provideExpressionTestCases")
   void expressionTestCases(ExpressionTestCase testCase) {
-    var scanner = new Scanner(testCase.input);
-    var parser = new Parser(scanner.scanTokens());
-    var expression = parser.parseExpression();
-    var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new StubIOPort());
-    var result = interpreter.evaluateExpression(expression);
+    final var scanner = new Scanner(testCase.input);
+    final var parser = new Parser(scanner.scanTokens());
+    final var expression = parser.parseExpression();
+    final var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new StubIOPort());
+    final var result = interpreter.evaluateExpression(expression);
 
     assertEquals(testCase.expectedValue, result);
   }
@@ -86,48 +86,48 @@ class InterpreterTest {
             Map.of()),
         new ProgramTestCase(
             """
-                        var a = 1;
-                        var b = 2;
-                        print a + b;
-                        """,
+                                var a = 1;
+                                var b = 2;
+                                print a + b;
+                                """,
             List.of("3"),
             Map.of("a", new NumberValue(1), "b", new NumberValue(2))),
         new ProgramTestCase(
             """
-                        var a;
-                        print a;
-                        """,
+                                var a;
+                                print a;
+                                """,
             List.of("nil"),
             Map.of("a", NullValue.VALUE)),
         new ProgramTestCase(
             """
-                        var a = 1;
-                        print a = 2;
-                        """,
+                                var a = 1;
+                                print a = 2;
+                                """,
             List.of("2"),
             Map.of("a", new NumberValue(2))),
         new ProgramTestCase(
             """
-                        var a = "global a";
-                        var b = "global b";
-                        var c = "global c";
-                        {
-                            var a = "outer a";
-                            var b = "outer b";
-                            {
-                                var a = "inner a";
+                                var a = "global a";
+                                var b = "global b";
+                                var c = "global c";
+                                {
+                                    var a = "outer a";
+                                    var b = "outer b";
+                                    {
+                                        var a = "inner a";
+                                        print a;
+                                        print b;
+                                        print c;
+                                    }
+                                    print a;
+                                    print b;
+                                    print c;
+                                }
                                 print a;
                                 print b;
                                 print c;
-                            }
-                            print a;
-                            print b;
-                            print c;
-                        }
-                        print a;
-                        print b;
-                        print c;
-                        """,
+                                """,
             List.of(
                 "inner a",
                 "outer b",
@@ -144,18 +144,50 @@ class InterpreterTest {
                 "b",
                 new StringValue("global b"),
                 "c",
-                new StringValue("global c"))));
+                new StringValue("global c"))),
+        new ProgramTestCase(
+            """
+                        var a = 2;
+                        if (a == 2) print "a is 2"; else print "foo";
+                        """,
+            List.of("a is 2"),
+            Map.of("a", new NumberValue(2))),
+        new ProgramTestCase(
+            """
+                        print "hi" or 2;
+                        print nil or "yes";
+                        """,
+            List.of("hi", "yes"),
+            Map.of()),
+        new ProgramTestCase(
+            """
+                        var i = 0;
+                        while (i < 3) {
+                          print i;
+                          i = i + 1;
+                        }
+                        """,
+            List.of("0", "1", "2"),
+            Map.of("i", new NumberValue(3))),
+        new ProgramTestCase(
+            """
+                        for (var i = 0; i < 3; i = i + 1) {
+                            print i;
+                        }
+                        """,
+            List.of("0", "1", ""),
+            Map.of()));
   }
 
   @ParameterizedTest
   @MethodSource("provideProgramTestCases")
   void programTestCases(ProgramTestCase testCase) {
-    var scanner = new Scanner(testCase.input);
-    var parser = new Parser(scanner.scanTokens());
-    var statements = parser.parse();
-    var environment = new DefaultEnvironmentAdapter();
-    var io = new StubIOPort();
-    var interpreter = new Interpreter(environment, io);
+    final var scanner = new Scanner(testCase.input);
+    final var parser = new Parser(scanner.scanTokens());
+    final var statements = parser.parse();
+    final var environment = new DefaultEnvironmentAdapter();
+    final var io = new StubIOPort();
+    final var interpreter = new Interpreter(environment, io);
     interpreter.interpret(statements);
     assertEquals(testCase.expectedStandardOutput(), io.getStdout());
     assertEquals(testCase.expectedVariables, environment.values);

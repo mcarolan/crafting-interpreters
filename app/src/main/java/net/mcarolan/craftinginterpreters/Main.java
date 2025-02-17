@@ -26,25 +26,25 @@ public class Main {
   }
 
   static void run(String source) {
-    var scanner = new Scanner(source);
-    var tokens = scanner.scanTokens();
-    var parser = new Parser(tokens);
-    var statements = parser.parse();
-    var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new DefaultIOPort());
+    final var scanner = new Scanner(source);
+    final var tokens = scanner.scanTokens();
+    final var parser = new Parser(tokens);
+    final var statements = parser.parse();
+    final var interpreter = new Interpreter(new DefaultEnvironmentAdapter(), new DefaultIOPort());
     interpreter.interpret(statements);
   }
 
   static void runFile(String path) throws IOException {
-    var bytes = Files.readAllBytes(Paths.get(path));
+    final var bytes = Files.readAllBytes(Paths.get(path));
     run(new String(bytes, Charsets.UTF_8));
   }
 
   static void runPrompt() throws IOException {
-    var input = new InputStreamReader(System.in);
-    try (var reader = new BufferedReader(input)) {
+    final var input = new InputStreamReader(System.in);
+    try (final var reader = new BufferedReader(input)) {
       while (true) {
         System.out.print("lox> ");
-        var line = reader.readLine();
+        final var line = reader.readLine();
 
         if (line == null) {
           break;

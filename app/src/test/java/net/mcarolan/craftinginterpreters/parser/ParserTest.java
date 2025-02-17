@@ -15,7 +15,7 @@ class ParserTest extends ScannerFixtures {
 
   @Test
   void parseSimpleExpression() {
-    var expected =
+    final var expected =
         new Binary(
             new Binary(
                 new Literal(new NumberValue(1.0), 1),
@@ -25,7 +25,7 @@ class ParserTest extends ScannerFixtures {
             new Token(TokenType.EQUAL_EQUAL, "==", null, 1, 1),
             new Literal(new NumberValue(2.0), 1),
             1);
-    var tokens =
+    final var tokens =
         List.of(
             new Token(TokenType.NUMBER, "1", new NumberValue(1.0), 1, 1),
             new Token(TokenType.PLUS, "+", null, 1, 1),
@@ -33,7 +33,7 @@ class ParserTest extends ScannerFixtures {
             new Token(TokenType.EQUAL_EQUAL, "==", null, 1, 1),
             new Token(TokenType.NUMBER, "2", new NumberValue(2.0), 1, 1),
             eof(1));
-    var parser = new Parser(tokens);
+    final var parser = new Parser(tokens);
     assertEquals(expected, parser.parseExpression());
   }
 }

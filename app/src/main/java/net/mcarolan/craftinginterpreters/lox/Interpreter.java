@@ -1,5 +1,7 @@
 package net.mcarolan.craftinginterpreters.lox;
 
+import static net.mcarolan.craftinginterpreters.scanner.TokenType.OR;
+
 import java.util.List;
 import net.mcarolan.craftinginterpreters.ast.expression.*;
 import net.mcarolan.craftinginterpreters.ast.statement.*;
@@ -24,11 +26,28 @@ public class Interpreter {
       case Unary unary -> evaluateUnary(unary);
       case Variable variable -> evaluateVariable(variable);
       case Assign assign -> evaluateAssignment(assign);
+      case Logical logical -> evaluateLogical(logical);
     };
   }
 
+  private LoxValue evaluateLogical(Logical logical) {
+    final var left = evaluateExpression(logical.left());
+
+    if (logical.operator().type() == OR) {
+      if (isTruthy(left)) {
+        return left;
+      }
+    } else {
+      if (!isTruthy(left)) {
+        return left;
+      }
+    }
+
+    return evaluateExpression(logical.right());
+  }
+
   private LoxValue evaluateAssignment(Assign assign) {
-    var value = evaluateExpression(assign.value());
+    final var value = evaluateExpression(assign.value());
     environment.assign(assign.name().lexeme(), value);
     return value;
   }
@@ -51,18 +70,30 @@ public class Interpreter {
         evaluateExpression(expression.expression());
       }
       case Print print -> {
-        var stringValue = evaluateExpression(print.expression()).stringify();
+        final var stringValue = evaluateExpression(print.expression()).stringify();
         io.print(stringValue);
       }
       case Var var -> {
-        var initialiser = evaluateExpression(var.initialiser());
+        final var initialiser = evaluateExpression(var.initialiser());
         environment.define(var.name().lexeme(), initialiser);
       }
       case Block block -> {
-        var previous = environment;
+        final var previous = environment;
         environment = new DefaultEnvironmentAdapter(previous);
         block.statementList().forEach(this::evaluateStatement);
         environment = previous;
+      }
+      case If anIf -> {
+        if (isTruthy(evaluateExpression(anIf.condition()))) {
+          evaluateStatement(anIf.thenBranch());
+        } else {
+          anIf.elseBranch().ifPresent(this::evaluateStatement);
+        }
+      }
+      case While aWhile -> {
+        while (isTruthy(evaluateExpression(aWhile.condition()))) {
+          evaluateStatement(aWhile.body());
+        }
       }
     }
   }
@@ -72,11 +103,11 @@ public class Interpreter {
   }
 
   private LoxValue evaluateBinary(Binary binary) {
-    var left = evaluateExpression(binary.left());
-    var right = evaluateExpression(binary.right());
+    final var left = evaluateExpression(binary.left());
+    final var right = evaluateExpression(binary.right());
 
-    var line = binary.operator().lineStart();
-    var operatorType = binary.operator().type();
+    final var line = binary.operator().lineStart();
+    final var operatorType = binary.operator().type();
     return switch (operatorType) {
       case PLUS -> interpretAddition(left, right, line);
       case MINUS, SLASH, STAR -> interpretNumberExpression(left, right, operatorType, line);
@@ -96,9 +127,9 @@ public class Interpreter {
 
   private static LoxValue interpretNumberExpression(
       LoxValue left, LoxValue right, TokenType operatorType, int line) {
-    if (left instanceof NumberValue(var leftValue)
-        && right instanceof NumberValue(var rightValue)) {
-      var result =
+    if (left instanceof NumberValue(final var leftValue)
+        && right instanceof NumberValue(final var rightValue)) {
+      final var result =
           switch (operatorType) {
             case STAR -> leftValue * rightValue;
             case MINUS -> leftValue - rightValue;
@@ -120,9 +151,9 @@ public class Interpreter {
 
   private static LoxValue interpretNumberComparison(
       LoxValue left, LoxValue right, TokenType operatorType, int line) {
-    if (left instanceof NumberValue(var leftValue)
-        && right instanceof NumberValue(var rightValue)) {
-      var result =
+    if (left instanceof NumberValue(final var leftValue)
+        && right instanceof NumberValue(final var rightValue)) {
+      final var result =
           switch (operatorType) {
             case GREATER -> leftValue > rightValue;
             case GREATER_EQUAL -> leftValue >= rightValue;
@@ -139,12 +170,12 @@ public class Interpreter {
   }
 
   private static LoxValue interpretAddition(LoxValue left, LoxValue right, int line) {
-    if (left instanceof NumberValue(var leftValue)
-        && right instanceof NumberValue(var rightValue)) {
+    if (left instanceof NumberValue(final var leftValue)
+        && right instanceof NumberValue(final var rightValue)) {
       return new NumberValue(leftValue + rightValue);
     }
-    if (left instanceof StringValue(var leftValue)
-        && right instanceof StringValue(var rightValue)) {
+    if (left instanceof StringValue(final var leftValue)
+        && right instanceof StringValue(final var rightValue)) {
       return new StringValue(leftValue + rightValue);
     }
     throw new InterpreterException(
@@ -156,11 +187,11 @@ public class Interpreter {
   }
 
   private LoxValue evaluateUnary(Unary unary) {
-    var right = evaluateExpression(unary.right());
+    final var right = evaluateExpression(unary.right());
 
     return switch (unary.operator().type()) {
       case MINUS -> interpretMinus(right, unary.operator().lineStart());
-      case BANG -> isTruthy(right).not();
+      case BANG -> BooleanValue.of(!isTruthy(right));
       default ->
           throw new InterpreterException(
               String.format("Unexpected unary with %s operator", unary.operator().type()),
@@ -168,12 +199,12 @@ public class Interpreter {
     };
   }
 
-  private static BooleanValue isTruthy(LoxValue value) {
+  private static boolean isTruthy(LoxValue value) {
     return switch (value) {
-      case BooleanValue booleanValue -> booleanValue;
-      case NullValue ignored -> BooleanValue.FALSE;
-      case NumberValue ignored -> BooleanValue.TRUE;
-      case StringValue ignored -> BooleanValue.TRUE;
+      case BooleanValue booleanValue -> booleanValue.value();
+      case NullValue ignored -> false;
+      case NumberValue ignored -> true;
+      case StringValue ignored -> true;
     };
   }
 

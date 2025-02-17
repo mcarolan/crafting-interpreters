@@ -134,7 +134,7 @@ class ScannerTest extends ScannerFixtures {
   @ParameterizedTest
   @MethodSource("provideTokenTestCases")
   void tokenTestCases(TokenTestCase testCase) {
-    var scanner = new Scanner(testCase.source);
+    final var scanner = new Scanner(testCase.source);
     assertEquals(testCase.expectedTokens, scanner.scanTokens());
   }
 }

@@ -4,6 +4,7 @@ import static net.mcarolan.craftinginterpreters.scanner.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.mcarolan.craftinginterpreters.ast.expression.*;
 import net.mcarolan.craftinginterpreters.ast.statement.*;
 import net.mcarolan.craftinginterpreters.lox.ParserException;
@@ -26,10 +27,10 @@ public class Parser {
   }
 
   public List<Statement> parse() {
-    var statements = new ArrayList<Statement>();
+    final var statements = new ArrayList<Statement>();
 
     while (!isAtEnd()) {
-      statements.add(statement());
+      statements.add(declaration());
     }
     return statements;
   }
@@ -43,7 +44,7 @@ public class Parser {
   }
 
   private Statement varDeclaration() {
-    var name = consume(IDENTIFIER, "Expect variable name");
+    final var name = consume(IDENTIFIER, "Expect variable name");
 
     Expression initialiser = new Literal(NullValue.VALUE, previous().lineEnd());
 
@@ -56,17 +57,96 @@ public class Parser {
   }
 
   private Statement statement() {
+    if (match(FOR)) {
+      return forStatement();
+    }
+    if (match(IF)) {
+      return ifStatement();
+    }
+    if (match(WHILE)) {
+      return whileStatement();
+    }
     if (match(PRINT)) {
       return printStatement();
     }
     if (match(LEFT_BRACE)) {
       return new Block(block());
     }
-    return declaration();
+    return expressionStatement();
+  }
+
+  private Statement forStatement() {
+    int line = previous().lineEnd();
+    consume(LEFT_PAREN, "Expect ( after for");
+    Optional<Statement> initializer;
+
+    if (match(SEMICOLON)) {
+      initializer = Optional.empty();
+    } else if (match(VAR)) {
+      initializer = Optional.of(varDeclaration());
+    } else {
+      initializer = Optional.of(expressionStatement());
+    }
+
+    Optional<Expression> condition;
+
+    if (match(SEMICOLON)) {
+      condition = Optional.empty();
+    } else {
+      condition = Optional.of(expression());
+    }
+
+    Optional<Expression> increment;
+
+    if (check(RIGHT_PAREN)) {
+      increment = Optional.empty();
+    } else {
+      increment = Optional.of(expression());
+    }
+
+    consume(RIGHT_PAREN, "Expected ) after increment");
+    final var body = statement();
+
+    final var withIncrement =
+        increment.map(inc -> blockOf(body, new ExpressionStatement(inc))).orElse(body);
+
+    final var loop =
+        new While(condition.orElse(new Literal(new BooleanValue(true), line)), withIncrement);
+
+    return initializer.map(init -> blockOf(init, loop)).orElse(loop);
+  }
+
+  private Statement expressionStatement() {
+    final var expression = expression();
+    expectSemicolon();
+    return new ExpressionStatement(expression);
+  }
+
+  private Statement whileStatement() {
+    consume(LEFT_PAREN, "Expect ( after while");
+    final var condition = expression();
+    consume(RIGHT_PAREN, "Expect ) after expression");
+    final var body = statement();
+    return new While(condition, body);
+  }
+
+  private Statement ifStatement() {
+    consume(LEFT_PAREN, "Expect ( after if");
+    final var condition = expression();
+    consume(RIGHT_PAREN, "Expect ) after expression");
+
+    final var thenBranch = statement();
+    Optional<Statement> elseBranch = Optional.empty();
+
+    if (match(ELSE)) {
+      elseBranch = Optional.of(statement());
+    }
+
+    return new If(condition, thenBranch, elseBranch);
   }
 
   private List<Statement> block() {
-    var statements = new ArrayList<Statement>();
+    final var statements = new ArrayList<Statement>();
 
     while (!check(RIGHT_BRACE) && !isAtEnd()) {
       statements.add(declaration());
@@ -77,7 +157,7 @@ public class Parser {
   }
 
   private Statement printStatement() {
-    var expression = expression();
+    final var expression = expression();
     expectSemicolon();
     return new Print(expression);
   }
@@ -91,11 +171,11 @@ public class Parser {
   }
 
   private Expression assignment() {
-    var expression = equality();
+    final var expression = or();
 
     if (match(EQUAL)) {
-      var equals = previous();
-      var value = assignment();
+      final var equals = previous();
+      final var value = assignment();
 
       if (expression instanceof Variable var) {
         return new Assign(var.name(), value, value.line());
@@ -107,12 +187,36 @@ public class Parser {
     return expression;
   }
 
+  private Expression or() {
+    var expression = and();
+
+    while (match(OR)) {
+      final var operator = previous();
+      final var right = and();
+      expression = new Logical(expression, operator, right, operator.lineEnd());
+    }
+
+    return expression;
+  }
+
+  private Expression and() {
+    var expression = equality();
+
+    while (match(AND)) {
+      final var operator = previous();
+      final var right = equality();
+      expression = new Logical(expression, operator, right, operator.lineEnd());
+    }
+
+    return expression;
+  }
+
   private Expression equality() {
     var expression = comparison();
 
     while (match(BANG_EQUAL, EQUAL_EQUAL)) {
-      var operator = previous();
-      var right = comparison();
+      final var operator = previous();
+      final var right = comparison();
 
       expression = new Binary(expression, operator, right, right.line());
     }
@@ -124,8 +228,8 @@ public class Parser {
     var expression = term();
 
     while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
-      var operator = previous();
-      var right = term();
+      final var operator = previous();
+      final var right = term();
       expression = new Binary(expression, operator, right, right.line());
     }
 
@@ -136,8 +240,8 @@ public class Parser {
     var expression = factor();
 
     while (match(MINUS, PLUS)) {
-      var operator = previous();
-      var right = factor();
+      final var operator = previous();
+      final var right = factor();
       expression = new Binary(expression, operator, right, right.line());
     }
 
@@ -148,8 +252,8 @@ public class Parser {
     var expression = unary();
 
     while (match(SLASH, STAR)) {
-      var operator = previous();
-      var right = unary();
+      final var operator = previous();
+      final var right = unary();
       expression = new Binary(expression, operator, right, right.line());
     }
 
@@ -158,8 +262,8 @@ public class Parser {
 
   private Expression unary() {
     if (match(BANG, MINUS)) {
-      var operator = previous();
-      var right = unary();
+      final var operator = previous();
+      final var right = unary();
       return new Unary(operator, right, right.line());
     }
 
@@ -188,7 +292,7 @@ public class Parser {
     }
 
     if (match(LEFT_PAREN)) {
-      var expression = expression();
+      final var expression = expression();
       consume(RIGHT_PAREN, "Expect ')' after expression.");
       return new Grouping(expression, expression.line());
     }
@@ -204,7 +308,7 @@ public class Parser {
   }
 
   private boolean match(TokenType... types) {
-    for (var type : types) {
+    for (final var type : types) {
       if (check(type)) {
         advance();
         return true;
@@ -237,5 +341,9 @@ public class Parser {
 
   private Token previous() {
     return tokens.get(current - 1);
+  }
+
+  private static Statement blockOf(Statement... statements) {
+    return new Block(List.of(statements));
   }
 }

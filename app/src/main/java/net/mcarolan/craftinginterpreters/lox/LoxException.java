@@ -2,11 +2,9 @@ package net.mcarolan.craftinginterpreters.lox;
 
 public sealed class LoxException extends RuntimeException
     permits InterpreterException, ParserException, ScannerException {
-  private int line;
 
   public LoxException(String message, int line, Throwable cause) {
-    super(message, cause);
-    this.line = line;
+    super(String.format("Line %d: %s", line, message), cause);
   }
 
   public LoxException(String message, int line) {

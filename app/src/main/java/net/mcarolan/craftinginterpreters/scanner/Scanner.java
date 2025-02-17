@@ -40,7 +40,7 @@ public class Scanner {
 
   public List<Token> scanTokens() {
     while (current < source.length()) {
-      var ch = charAt(current);
+      final var ch = charAt(current);
 
       if (ch == '\n') {
         line++;
@@ -58,7 +58,7 @@ public class Scanner {
         continue;
       }
 
-      var token = scanToken();
+      final var token = scanToken();
       tokens.add(token);
     }
 
@@ -73,8 +73,8 @@ public class Scanner {
   }
 
   private Token string() {
-    var start = current;
-    var lineStart = line;
+    final var start = current;
+    final var lineStart = line;
 
     current++;
     while (current < source.length() && source.charAt(current) != '"') {
@@ -89,13 +89,13 @@ public class Scanner {
     }
 
     current++;
-    var value = source.substring(start + 1, current - 1);
-    var lexeme = source.substring(start, current);
+    final var value = source.substring(start + 1, current - 1);
+    final var lexeme = source.substring(start, current);
     return new Token(TokenType.STRING, lexeme, new StringValue(value), lineStart, line);
   }
 
   private Token number() {
-    var start = current;
+    final var start = current;
     while (Character.isDigit(charAt(current))) {
       current++;
     }
@@ -106,20 +106,20 @@ public class Scanner {
       } while (Character.isDigit(charAt(current)));
     }
 
-    var lexeme = source.substring(start, current);
-    var value = Double.parseDouble(lexeme);
+    final var lexeme = source.substring(start, current);
+    final var value = Double.parseDouble(lexeme);
     return new Token(TokenType.NUMBER, lexeme, new NumberValue(value), line, line);
   }
 
   private Token identifierOrKeyword() {
-    var start = current;
+    final var start = current;
 
     do {
       ++current;
     } while (Character.isLetterOrDigit(charAt(current)));
 
-    var lexeme = source.substring(start, current);
-    var tokenType = KEYWORDS.getOrDefault(lexeme.toLowerCase(), TokenType.IDENTIFIER);
+    final var lexeme = source.substring(start, current);
+    final var tokenType = KEYWORDS.getOrDefault(lexeme.toLowerCase(), TokenType.IDENTIFIER);
     return new Token(tokenType, lexeme, null, line, line);
   }
 
@@ -129,7 +129,7 @@ public class Scanner {
   }
 
   private Token scanToken() {
-    var c = charAt(current);
+    final var c = charAt(current);
 
     return switch (c) {
       case '(' -> operatorToken(String.valueOf(c), TokenType.LEFT_PAREN);

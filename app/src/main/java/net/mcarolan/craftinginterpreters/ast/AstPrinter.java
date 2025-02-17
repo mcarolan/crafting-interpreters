@@ -21,6 +21,8 @@ public class AstPrinter {
               "assign",
               new Literal(new StringValue(assign.name().lexeme()), assign.line()),
               assign.value());
+      case Logical logical ->
+          parenthesise(logical.operator().lexeme(), logical.left(), logical.right());
     };
   }
 
